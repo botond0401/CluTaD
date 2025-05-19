@@ -588,7 +588,7 @@ class GaussianMultinomialDiffusion(torch.nn.Module):
 
             return -loss
     
-    def mixed_loss(self, x, out_dict):
+    def mixed_loss(self, x, out_dict, random=False):
         b = x.shape[0]
         device = x.device
         t, pt = self.sample_time(b, device, 'uniform')
@@ -607,11 +607,14 @@ class GaussianMultinomialDiffusion(torch.nn.Module):
         
         x_in = torch.cat([x_num_t, log_x_cat_t], dim=1)
 
-        model_out = self._denoise_fn(
-            x_in,
-            t,
-            **out_dict
-        )
+        if random:
+            model_out = torch.randn_like(x_in)
+        else:
+            model_out = self._denoise_fn(
+                x_in,
+                t,
+                **out_dict
+            )
 
         model_out_num = model_out[:, :self.num_numerical_features]
         model_out_cat = model_out[:, self.num_numerical_features:]
@@ -629,6 +632,7 @@ class GaussianMultinomialDiffusion(torch.nn.Module):
 
         return loss_multi.mean(), loss_gauss.mean()
     
+
     @torch.no_grad()
     def mixed_elbo(self, x0, out_dict):
         b = x0.size(0)
