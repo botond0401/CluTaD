@@ -9,7 +9,7 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
 
     # Drop cluster column and save separately
     clusters = df[[cluster_col]].copy()
-    clusters.to_csv(os.path.join(save_dir, "clusters.csv"), index=True)
+    clusters.to_csv(os.path.join(save_dir, "clusters.csv"), index=False)
     df = df.drop(columns=[cluster_col])
 
     # Identify numerical columns
@@ -40,7 +40,7 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
     df = df[numerical_cols + categorical_cols]
 
     # Save processed data
-    df.to_csv(os.path.join(save_dir, "data_processed.csv"), index=True)
+    df.to_csv(os.path.join(save_dir, "data_processed.csv"), index=False)
 
     # Compute metadata
     num_features = len(df.columns)
