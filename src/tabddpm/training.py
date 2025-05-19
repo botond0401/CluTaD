@@ -2,6 +2,7 @@ from copy import deepcopy
 import numpy as np
 import torch.optim as optim
 from .gaussian_multinomial_diffusion import GaussianMultinomialDiffusion
+from .evaluate import evaluate_mixed_loss
 
 
 def get_diffusion_model(model, num_classes, num_numerical, device):
@@ -32,6 +33,7 @@ class Trainer:
     def train(self):
         step = 0
         losses = []
+        overall_losses = []
         iterator = iter(self.train_loader)
 
         while step < self.steps:
@@ -49,9 +51,12 @@ class Trainer:
             loss.backward()
             self.optimizer.step()
 
+            overall_loss, _ = evaluate_mixed_loss(self.model, self.train_loader, self.device)
+
             if step % 100 == 0:
                 print(f"[{step}/{self.steps}] Loss: {loss.item():.4f}")
-                losses.append(loss.item())
+            losses.append(loss.item())
+            overall_losses.append(overall_loss)
 
             step += 1
-        return losses
+        return losses, overall_losses
