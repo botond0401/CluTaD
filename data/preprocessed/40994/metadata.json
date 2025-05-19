@@ -1,0 +1,33 @@
+{
+    "numerical_columns": [
+        "Study",
+        "Run",
+        "vconst_corr",
+        "vconst_2",
+        "vconst_3",
+        "vconst_4",
+        "vconst_5",
+        "vconst_7",
+        "ah_corr",
+        "ah_bolus",
+        "slm_corr",
+        "efficiency_factor",
+        "tidal_mix_max",
+        "vertical_decay_scale",
+        "convect_corr",
+        "bckgrnd_vdc1",
+        "bckgrnd_vdc_ban",
+        "bckgrnd_vdc_eq",
+        "bckgrnd_vdc_psim",
+        "Prandtl"
+    ],
+    "categorical_columns": [],
+    "cluster_col": "outcome",
+    "num_numerical_features": 20,
+    "num_categorical_features": 0,
+    "num_features": 20,
+    "num_clusters": 2,
+    "num_samples": 540,
+    "f_s_ratio": 3.704,
+    "num_classes_per_cat": []
+}
