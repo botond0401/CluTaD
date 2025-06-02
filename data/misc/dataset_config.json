@@ -1,0 +1,98 @@
+{
+  "1480": {
+    "file": "phpOJxGL9.arff",
+    "cluster_col": "Class",
+    "categorical_cols": ["V2"]
+  },
+
+  "458": {
+    "file": "analcatdata_authorship.arff",
+    "cluster_col": "Author",
+    "categorical_cols": []
+  },
+
+  "469": {
+    "file": "analcatdata_dmft.arff",
+    "cluster_col": "Prevention",
+    "categorical_cols": ["DMFT.Begin", "DMFT.End", "Gender", "Ethnic"]
+  },
+
+  "11": {
+    "file": "dataset_11_balance-scale.arff",
+    "cluster_col": "class",
+    "categorical_cols": []
+  },
+
+  "23": {
+    "file": "dataset_23_cmc.arff",
+    "cluster_col": "Contraceptive_method_used",
+    "categorical_cols": ["Wifes_education", "Husbands_education", "Wifes_religion", "Wifes_now_working%3F",
+    "Husbands_occupation", "Standard-of-living_index", "Media_exposure"]
+  },
+
+  "37": {
+    "file": "dataset_37_diabetes.arff",
+    "cluster_col": "class",
+    "categorical_cols": []
+  },
+
+  "1067": {
+    "file": "kc1.arff",
+    "cluster_col": "defects",
+    "categorical_cols": []
+  },
+
+  "1063": {
+    "file": "kc2.arff",
+    "cluster_col": "problems",
+    "categorical_cols": []
+  },
+
+  "1068": {
+    "file": "pc1.arff",
+    "cluster_col": "defects",
+    "categorical_cols": []
+  },
+
+  "1050": {
+    "file": "pc3.arff",
+    "cluster_col": "c",
+    "categorical_cols": []
+  },
+
+  "1049": {
+    "file": "pc4.arff",
+    "cluster_col": "c",
+    "categorical_cols": []
+  },
+
+  "1464": {
+    "file": "php0iVrYT.arff",
+    "cluster_col": "Class",
+    "categorical_cols": []
+  },
+
+  "40975": {
+    "file": "php2jDIhh.arff",
+    "cluster_col": "class",
+    "categorical_cols": ["buying", "maint", "doors", "persons", "lug_boot", "safety"]
+  },
+
+  "40982": {
+    "file": "php5s7Ep8.arff",
+    "cluster_col": "target",
+    "categorical_cols": []
+  },
+
+  "1510": {
+    "file": "phpAmSP4g.arff",
+    "cluster_col": "Class",
+    "categorical_cols": []
+  },
+
+  "40994": {
+    "file": "phpJem85A.arff",
+    "cluster_col": "outcome",
+    "categorical_cols": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+    "numerical_columns": [],
+    "categorical_columns": [
+        "buying",
+        "maint",
+        "doors",
+        "persons",
+        "lug_boot",
+        "safety"
+    ],
+    "cluster_col": "class",
+    "num_numerical_features": 0,
+    "num_categorical_features": 6,
+    "num_features": 6,
+    "num_clusters": 4,
+    "num_samples": 1728,
+    "f_s_ratio": 0.347,
+    "num_classes_per_cat": [
+        4,
+        4,
+        4,
+        3,
+        3,
+        3
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "numerical_columns": [
+        "Number_of_children_ever_born",
+        "Wifes_age"
+    ],
+    "categorical_columns": [
+        "Wifes_education",
+        "Husbands_education",
+        "Wifes_religion",
+        "Wifes_now_working%3F",
+        "Husbands_occupation",
+        "Standard-of-living_index",
+        "Media_exposure"
+    ],
+    "cluster_col": "Contraceptive_method_used",
+    "num_numerical_features": 2,
+    "num_categorical_features": 7,
+    "num_features": 9,
+    "num_clusters": 3,
+    "num_samples": 1473,
+    "f_s_ratio": 0.611,
+    "num_classes_per_cat": [
+        4,
+        4,
+        2,
+        2,
+        4,
+        4,
+        2
+    ]
+}

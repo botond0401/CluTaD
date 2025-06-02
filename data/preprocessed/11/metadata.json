@@ -1,0 +1,17 @@
+{
+    "numerical_columns": [
+        "left-weight",
+        "left-distance",
+        "right-weight",
+        "right-distance"
+    ],
+    "categorical_columns": [],
+    "cluster_col": "class",
+    "num_numerical_features": 4,
+    "num_categorical_features": 0,
+    "num_features": 4,
+    "num_clusters": 3,
+    "num_samples": 625,
+    "f_s_ratio": 0.64,
+    "num_classes_per_cat": []
+}
