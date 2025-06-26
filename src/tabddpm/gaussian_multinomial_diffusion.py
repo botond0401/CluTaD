@@ -630,7 +630,14 @@ class GaussianMultinomialDiffusion(torch.nn.Module):
         # loss_multi = torch.where(out_dict['y'] == 1, loss_multi, 2 * loss_multi)
         # loss_gauss = torch.where(out_dict['y'] == 1, loss_gauss, 2 * loss_gauss)
 
-        return loss_multi.mean(), loss_gauss.mean()
+        loss_output = {
+            'model_out': model_out,
+            'x_num_t': x_num_t,
+            'log_x_cat_t': log_x_cat_t,
+            't': t
+        }
+
+        return loss_multi.mean(), loss_gauss.mean(), loss_output
     
 
     @torch.no_grad()
