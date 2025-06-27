@@ -16,10 +16,10 @@
     "cluster_col": "Class",
     "num_numerical_features": 9,
     "num_categorical_features": 1,
-    "num_features": 10,
+    "num_columns": 11,
     "num_clusters": 2,
     "num_samples": 583,
-    "f_s_ratio": 1.715,
+    "f_s_ratio": 1.887,
     "num_classes_per_cat": [
         2
     ]
