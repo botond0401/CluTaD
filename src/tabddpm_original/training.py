@@ -14,7 +14,7 @@ def get_diffusion_model(model, num_classes, num_numerical, device):
         num_numerical_features=num_numerical,
         denoise_fn=model,
         gaussian_loss_type='mse',
-        num_timesteps=1000,
+        num_timesteps=10000,
         scheduler='cosine',
         device=device
     )

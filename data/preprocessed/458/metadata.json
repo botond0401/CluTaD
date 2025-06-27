@@ -75,7 +75,7 @@
     "cluster_col": "Author",
     "num_numerical_features": 70,
     "num_categorical_features": 0,
-    "num_features": 70,
+    "num_columns": 70,
     "num_clusters": 4,
     "num_samples": 841,
     "f_s_ratio": 8.323,

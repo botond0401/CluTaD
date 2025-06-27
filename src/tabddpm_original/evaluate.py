@@ -1,5 +1,6 @@
 import torch
 
+
 def evaluate_mixed_loss(dm, data_loader, device):
     dm.eval()
     total_loss_multi = 0.0
