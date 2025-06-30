@@ -13,6 +13,8 @@ from src.clusterddpm.pretrainer import ClusterDDPMTrainer
 # Config
 DATA_PATH = 'data/preprocessed/1480/data_processed.csv'
 PLOTS_PATH = 'plots/clusterddpm/1480'
+CHECKPOINT_PATH = 'models/1480/clusterddpm/pretrain_checkpoint.pth'
+
 num_numeric = 9
 categories = [2]
 T = 200
@@ -63,5 +65,17 @@ trainer = ClusterDDPMTrainer(
     plot_freq=100
 )
 
-# Run training
+# Run pretraining
 trainer.train(steps=steps, batch_size=batch_size)
+
+# Save checkpoint
+os.makedirs(os.path.dirname(CHECKPOINT_PATH), exist_ok=True)
+torch.save({
+    'encoder': encoder.state_dict(),
+    'denoiser': denoiser.state_dict(),
+    'optimizer': optimizer.state_dict(),
+    'T': T,
+    'num_numeric': num_numeric,
+    'categories': categories
+}, CHECKPOINT_PATH)
+print(f"✅ Pretraining checkpoint saved at {CHECKPOINT_PATH}")
