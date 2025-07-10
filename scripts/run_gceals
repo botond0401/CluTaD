@@ -1,0 +1,79 @@
+import torch
+import torch.optim as optim
+import pandas as pd
+import numpy as np
+import os
+import sys
+from torch.utils.data import DataLoader, TensorDataset
+
+from sklearn.metrics import confusion_matrix, accuracy_score, adjusted_rand_score
+from scipy.optimize import linear_sum_assignment
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from src.gceals.autoencoder import Autoencoder
+from src.gceals.model import GCEALs
+
+# Config
+DATA_PATH = 'data/preprocessed/1480/data_processed.csv'
+LABEL_PATH = 'data/preprocessed/1480/clusters.csv'
+CHECKPOINT_PATH = 'models/1480/gceals/final_model.pth'
+
+latent_dim = 10
+n_clusters = 2
+pretrain_epochs = 100
+train_epochs = 200
+batch_size = 256
+lr = 1e-3
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Load data
+x_real = pd.read_csv(DATA_PATH).values.astype(np.float32)
+y_true = pd.read_csv(LABEL_PATH).values.flatten()
+x_real = torch.tensor(x_real, dtype=torch.float32).to(device)
+dataset = TensorDataset(x_real)
+dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+N, D = x_real.shape
+
+# Models
+model = GCEALs(input_dim=D, latent_dim=latent_dim, n_clusters=n_clusters).to(device)
+
+
+# Optimizer
+optimizer = optim.Adam(model.parameters(), lr=lr)
+
+# Pretrain AE
+print("🔹 Pretraining autoencoder...")
+model.pretrain(x_real, optimizer, epochs=pretrain_epochs, device=device)
+
+# Full training
+print("🔹 Training GCEALs model...")
+model.train_gceals(x_real, optimizer, epochs=train_epochs, device=device)
+
+# Save model
+os.makedirs(os.path.dirname(CHECKPOINT_PATH), exist_ok=True)
+torch.save(model.state_dict(), CHECKPOINT_PATH)
+print(f"✅ Model saved at {CHECKPOINT_PATH}")
+
+# Predict cluster assignments
+model.eval()
+with torch.no_grad():
+    z, _ = model.ae(x_real)
+    q = model.cluster_head(z)
+    y_pred = q.argmax(dim=1).cpu().numpy()
+
+# Alignment
+def cluster_accuracy(y_true, y_pred):
+    contingency = confusion_matrix(y_true, y_pred)
+    row_ind, col_ind = linear_sum_assignment(-contingency)
+    mapping = dict(zip(col_ind, row_ind))
+    y_aligned = np.array([mapping[label] for label in y_pred])
+    acc = accuracy_score(y_true, y_aligned)
+    return acc, y_aligned
+
+accuracy, y_aligned = cluster_accuracy(y_true, y_pred)
+ari = adjusted_rand_score(y_true, y_pred)
+
+print(f"✅ Final clustering performance:")
+print(f"Accuracy: {accuracy:.4f}")
+print(f"ARI: {ari:.4f}")
