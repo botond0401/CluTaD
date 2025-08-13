@@ -1,9 +1,9 @@
 import os
 import joblib
 import json
-import numpy as np
 import pandas as pd
 from sklearn.preprocessing import QuantileTransformer, OneHotEncoder
+from typing import List, Dict, Union
 
 def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles_max=1000):
     os.makedirs(save_dir, exist_ok=True)
@@ -83,3 +83,155 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
         json.dump(metadata, f, indent=4)
 
     print(f"✅ Data and metadata saved to '{save_dir}'")
+
+
+def calculate_ranks(
+    data: Union[str, List[Dict]],
+    extra_data: Union[str, List[Dict]],
+    metric_name: str,
+    new_col_name: str,
+    output_path: str
+) -> pd.DataFrame:
+    """
+    Reads clustering results, appends an extra metric per dataset from another JSON,
+    computes Avg. rank, Std. rank, Overall rank for method columns,
+    and saves as JSON.
+
+    Parameters
+    ----------
+    data : str | list[dict]
+        - Main results JSON (path, string, or list of dicts).
+    extra_data : str | list[dict]
+        - Extra dataset info JSON (path, string, or list of dicts), must contain
+          "dataset" matching the Data set ID and the metric to append.
+    extra_metric_name : str
+        - Name of the column to create for the extra metric.
+    output_path : str
+        - Path to save augmented JSON.
+
+    Returns
+    -------
+    pd.DataFrame
+        The augmented DataFrame.
+    """
+
+    # Helper to load JSON from various input types
+    def _load_json(src):
+        if isinstance(src, list):
+            return src
+        elif isinstance(src, str):
+            if src.strip().startswith("["):  # JSON string
+                return json.loads(src)
+            else:  # file path
+                with open(src, "r") as f:
+                    return json.load(f)
+        else:
+            raise ValueError("Unsupported data type for JSON input.")
+
+    # Load main data and extra data
+    records = _load_json(data)
+    extra_records = _load_json(extra_data)
+
+    df = pd.DataFrame(records)
+    extra_df = pd.DataFrame(extra_records)
+
+    # Match "dataset" column in extra_df to "Data set ID" in df
+    # Ensure both are same type for merge
+    df["Data set ID"] = df["Data set ID"].astype(str)
+    extra_df["dataset_index"] = extra_df["dataset_index"].astype(str)
+    if metric_name == 'accuracy':
+        extra_df[metric_name] = 100 * extra_df[metric_name]
+
+    # Select the relevant column from extra_df
+    if metric_name not in extra_df.columns:
+        raise ValueError(f"'{metric_name}' not found in extra_data columns.")
+
+    df = df.merge(
+        extra_df[["dataset_index", metric_name]],
+        left_on="Data set ID",
+        right_on="dataset_index",
+        how="left"
+    ).drop(columns=["dataset_index"]).fillna(0)
+    
+    df = df.rename(columns={metric_name: new_col_name})
+
+    # Identify method columns (exclude ID + extra metric column)
+    id_col = "Data set ID"
+    method_cols = [c for c in df.columns if c != id_col]
+
+    # Rank within each dataset
+    ranks = df[method_cols].round(1).rank(axis=1, ascending=False, method="average")
+
+    # Summary stats
+    avg_rank = ranks.mean(axis=0)
+    std_rank = ranks.std(axis=0, ddof=1)
+    overall_rank = avg_rank.rank(ascending=True, method="min")
+
+    # Build summary rows
+    summary_rows = pd.DataFrame(
+        [
+            ["Avg. rank", *avg_rank.tolist()],
+            ["Std. rank", *std_rank.tolist()],
+            ["Overall rank", *overall_rank.tolist()]
+        ],
+        columns=df.columns
+    )
+
+    # Append to table
+    augmented_df = pd.concat([df, summary_rows], ignore_index=True)
+
+    # Save
+    augmented_df.to_json(output_path, orient="records", indent=2)
+
+    return augmented_df
+
+
+def keep_highest_accuracy(
+    data: Union[str, List[Dict]],
+    output_path: str
+) -> pd.DataFrame:
+    """
+    For each dataset, keep only the entry with the highest accuracy.
+
+    Parameters
+    ----------
+    data : str | list[dict]
+        Path to JSON file, JSON string, or parsed list of dicts.
+    output_path : str
+        Path to save filtered JSON.
+
+    Returns
+    -------
+    pd.DataFrame
+        Filtered DataFrame with only the highest accuracy per dataset.
+    """
+    # Helper loader
+    def _load_json(src):
+        if isinstance(src, list):
+            return src
+        elif isinstance(src, str):
+            if src.strip().startswith("["):  # JSON string
+                return json.loads(src)
+            else:  # file path
+                with open(src, "r") as f:
+                    return json.load(f)
+        else:
+            raise ValueError("Unsupported data type for JSON input.")
+
+    # Load data
+    records = _load_json(data)
+    df = pd.DataFrame(records)
+
+    # Ensure accuracy is numeric
+    df["accuracy"] = pd.to_numeric(df["accuracy"], errors="coerce").round(3)
+
+    # Sort so that the highest accuracy is first per dataset
+    df_sorted = df.sort_values(["dataset_index", "accuracy"], ascending=[True, False])
+
+    # Keep first row for each dataset
+    best_df = df_sorted.groupby("dataset_index", as_index=False).first()
+
+    # Save to JSON
+    best_df.to_json(output_path, orient="records", indent=2)
+
+    return best_df
