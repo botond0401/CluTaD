@@ -3,8 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .noising_functions import q_sample_num
-from .noising_functions import q_sample_cat
+from .noising_functions import q_sample_num, q_sample_cat
 
 
 class DiffusionTrainer:
