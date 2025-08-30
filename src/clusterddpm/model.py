@@ -3,7 +3,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.mixture import GaussianMixture
-
+import torch.nn.utils as nn_utils
+import itertools
 
 class ClusterDDPM:
     """
@@ -44,58 +45,70 @@ class ClusterDDPM:
         t_norm = t.float() / self.T
         pred_num, pred_cat = self.denoiser(x_t, z, t_norm)
 
-        noise_num = noise[:, :self.num_numeric]
-        loss_num = ((pred_num - noise_num) ** 2).mean()
+        if self.num_numeric > 0 and pred_num is not None:
+            noise_num = noise[:, :self.num_numeric]
+            loss_num = ((pred_num - noise_num) ** 2).mean()
+        else:
+            loss_num = torch.zeros((), device=x.device)
 
-        loss_cat = 0.0
-        x0_cat = x[:, self.num_numeric:]
-        idx_c = 0
-        for K in self.categories:
-            target = x0_cat[:, idx_c:idx_c+K]
-            pred_prob = pred_cat[:, idx_c:idx_c+K]
-            kl = (target * (torch.log(target + 1e-10) - torch.log(pred_prob + 1e-10))).sum(1).mean()
-            loss_cat += kl
-            idx_c += K
-        if len(self.categories) > 0:
-            loss_cat /= len(self.categories)
+        loss_cat = torch.zeros((), device=x.device)
+
+        has_cats = bool(self.categories) and sum(self.categories) > 0
+        if has_cats and pred_cat is not None:
+          x0_cat = x[:, self.num_numeric:]
+          idx_c = 0
+          for K in self.categories:
+              target = x0_cat[:, idx_c:idx_c+K]
+              pred_prob = pred_cat[:, idx_c:idx_c+K]
+              kl = (target * (torch.log(target + 1e-10) - torch.log(pred_prob + 1e-10))).sum(1).mean()
+              loss_cat += kl
+              idx_c += K
+          if len(self.categories) > 0:
+              loss_cat /= len(self.categories)
 
         loss = loss_num + loss_cat
 
         optimizer.zero_grad()
         loss.backward()
+        nn_utils.clip_grad_norm_(
+            itertools.chain(self.encoder.parameters(), self.denoiser.parameters()),
+            max_norm=1.0
+        )
         optimizer.step()
 
         return loss.item(), loss_num.item(), loss_cat.item()
 
 
-    def pretrain(self, x_real, optimizer, steps=500, batch_size=64, plot_freq=100):
+    def pretrain(self, dataloader, optimizer, epochs, batch_size, plot_freq=100):
         """
         Pretrain encoder + denoiser over multiple steps.
 
         Args:
-            x_real: full dataset tensor (N, D)
+            dataloader: full dataset tensor (N, D)
             optimizer: optimizer for encoder + denoiser
-            steps: number of training steps
+            epochs: number of pretraining epochs
             batch_size: batch size
             plot_freq: print loss every plot_freq steps
         """
-        N = x_real.shape[0]
-        losses = []
+        for epoch in range(epochs):
+            total_loss = 0.0
+            n_samples = 0
+            for (x_batch,) in dataloader:
+                if x_batch.ndim == 1:
+                    x_batch = x_batch.unsqueeze(0)
+                x_batch = x_batch.to(self.device)
 
-        for step in range(steps):
-            idx = torch.randint(0, N, (batch_size,))
-            x_batch = x_real[idx]
+                loss, loss_num, loss_cat = self.pretrain_step(x_batch, optimizer)
 
-            loss, loss_num, loss_cat = self.pretrain_step(x_batch, optimizer)
+                total_loss += loss * x_batch.size(0)
+                n_samples += x_batch.size(0)
 
-            if step % plot_freq == 0:
-                print(f"Step {step}: Total {loss:.4f} | Num {loss_num:.4f} | Cat {loss_cat:.4f}")
-                losses.append(loss)
+            avg_loss = total_loss / n_samples
+            if (epoch+1) % plot_freq == 0:
+              print(f'[Pretrain] Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}')
 
-        return losses
-    
-        
-    def fit_gmm(self, x_real):
+
+    def fit_gmm(self, dataloader):
         """
         Fit a Gaussian Mixture Model on the latent space.
 
@@ -104,33 +117,41 @@ class ClusterDDPM:
             n_clusters: number of clusters to fit
         """
         self.encoder.eval()
-        latent_list = []
-
+        latent_z = []
         with torch.no_grad():
-            N = x_real.shape[0]
-            for i in range(0, N):
-                mu, logvar = self.encoder(x_real)
-                z = mu + torch.randn_like(mu) * (0.5 * logvar).exp()
-                latent_list.append(z.cpu())
+            for (x,) in dataloader:
+                x = x.to(self.device)
+                z_mu, z_sigma2_log = self.encoder(x)
+                z = torch.randn_like(z_mu) * torch.exp(z_sigma2_log / 2) + z_mu
+                latent_z.append(z)
+        latent_z = torch.cat(latent_z, 0).detach().cpu().numpy()
 
-        latent_z = torch.cat(latent_list, dim=0).numpy()
-
-        # Fit GMM
-        gmm = GaussianMixture(n_components=self.n_clusters, covariance_type='diag')
+        if self.gmm is not None:
+            init_weights = self.gmm.weights_
+            init_means = self.gmm.means_
+            init_precisions = self.gmm.precisions_
+            gmm = GaussianMixture(n_components = self.n_clusters,
+                                  covariance_type = 'diag',
+                                  reg_covar=1e-2,
+                                  weights_init = init_weights,
+                                  means_init = init_means,
+                                  precisions_init = init_precisions)
+        else:
+          gmm = GaussianMixture(n_components=self.n_clusters, covariance_type='diag', reg_covar=1e-2)
         gmm.fit(latent_z)
         self.gmm = gmm
-        print(f"✅ GMM fitted with {self.n_clusters} components")
+        #print(f"✅ GMM fitted with {self.n_clusters} components")
 
 
     def elbo_step(self, x, optimizer, kl_weight=0.1):
         """
         One ELBO training step for ClusterDDPM.
-        
+
         Args:
             x: input batch (B, D)
             optimizer: optimizer
             kl_weight: weight for the KL terms
-        
+
         Returns:
             total_loss, rec_loss, kl_loss
         """
@@ -151,8 +172,11 @@ class ClusterDDPM:
         pred_num, pred_cat = self.denoiser(x_t, z, t_norm)
 
         # Reconstruction loss
-        noise_num = noise[:, :self.num_numeric]
-        rec_loss_num = ((pred_num - noise_num) ** 2).mean()
+        if self.num_numeric > 0 and pred_num is not None:
+            noise_num = noise[:, :self.num_numeric]
+            rec_loss_num = ((pred_num - noise_num) ** 2).mean()
+        else:
+            rec_loss_num = torch.zeros((), device=x.device)
 
         rec_loss_cat = 0.0
         x0_cat = x[:, self.num_numeric:]
@@ -169,7 +193,7 @@ class ClusterDDPM:
         rec_loss = rec_loss_num + rec_loss_cat
 
         # GMM prior
-        pi = torch.from_numpy(self.gmm.weights_).to(x).float()
+        pi = torch.tensor(self.gmm.weights_, device=self.device, dtype=torch.float32)
         c_mu = torch.from_numpy(self.gmm.means_).to(x).float()
         c_var = torch.from_numpy(self.gmm.covariances_).to(x).float()
         c_logvar = torch.log(c_var)
@@ -210,37 +234,46 @@ class ClusterDDPM:
         # Backward + update
         optimizer.zero_grad()
         total_loss.backward()
+        nn_utils.clip_grad_norm_(
+            itertools.chain(self.encoder.parameters(), self.denoiser.parameters()),
+            max_norm=1.0
+        )
         optimizer.step()
 
         return total_loss.item(), rec_loss.item(), kl_loss.item()
 
-    
 
-    def train_elbo(self, x_real, optimizer, steps=1000, batch_size=64, kl_weight=0.1, plot_freq=100):
+
+    def train_elbo(self, dataloader, optimizer, batch_size, kl_weight=0.1, plot_freq=100):
         """
         ELBO training loop: combines reconstruction + KL loss.
 
         Args:
             x_real: dataset (N, D)
             optimizer: optimizer
-            steps: number of steps
             batch_size: batch size
             kl_weight: weight on KL
             plot_freq: print every plot_freq steps
         """
-        N = x_real.shape[0]
-        losses = []
+        self.encoder.train()
+        self.denoiser.train()
+        total_loss = 0.0
+        total_recon_loss = 0.0
+        total_kl_loss = 0.0
+        n_samples = 0
 
-        for step in range(steps):
-            idx = torch.randint(0, N, (batch_size,))
-            x_batch = x_real[idx]
+        for (x_batch,) in dataloader:
+            if x_batch.ndim == 1:
+                x_batch = x_batch.unsqueeze(0)
+            x_batch = x_batch.to(self.device)
+            loss, rec_loss, kl_loss = self.elbo_step(x_batch, optimizer, kl_weight=kl_weight)
 
-            total_loss, rec_loss, kl_loss = self.elbo_step(x_batch, optimizer, kl_weight=kl_weight)
+            total_loss += loss * x_batch.size(0)
+            total_recon_loss += rec_loss * x_batch.size(0)
+            total_kl_loss += kl_loss * x_batch.size(0)
+            n_samples += x_batch.size(0)
 
-            if step % plot_freq == 0:
-                print(f"Step {step}: Total {total_loss:.4f} | Rec {rec_loss:.4f} | KL {kl_loss:.4f}")
-                losses.append(total_loss)
-
-        return losses
-
-
+        avg_loss = total_loss / n_samples
+        avg_recon_loss = total_recon_loss / n_samples
+        avg_kl_loss = total_kl_loss / n_samples
+        return avg_loss, avg_recon_loss, avg_kl_loss
