@@ -4,6 +4,9 @@ import json
 import pandas as pd
 from sklearn.preprocessing import QuantileTransformer, OneHotEncoder
 from typing import List, Dict, Union
+from sklearn.metrics import confusion_matrix, accuracy_score
+from scipy.optimize import linear_sum_assignment
+
 
 def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles_max=1000):
     os.makedirs(save_dir, exist_ok=True)
@@ -235,3 +238,12 @@ def keep_highest_accuracy(
     best_df.to_json(output_path, orient="records", indent=2)
 
     return best_df
+
+
+def cluster_accuracy(y_true, y_pred):
+    contingency = confusion_matrix(y_true, y_pred)
+    row_ind, col_ind = linear_sum_assignment(-contingency)
+    mapping = dict(zip(col_ind, row_ind))
+    y_aligned = np.array([mapping[label] for label in y_pred])
+    acc = accuracy_score(y_true, y_aligned)
+    return acc, y_aligned
