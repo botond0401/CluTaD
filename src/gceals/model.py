@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from sklearn.cluster import KMeans
+from .autoencoder import Autoencoder
 
 
 class GCEALsHead(nn.Module):
