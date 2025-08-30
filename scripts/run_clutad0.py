@@ -9,9 +9,9 @@ from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.clusterddpm.encoder import TabularEncoder
-from src.clusterddpm.denoiser import Denoiser
-from src.clusterddpm.model import ClusterDDPM
+from src.clutad0.encoder import TabularEncoder
+from src.clutad0.denoiser import Denoiser
+from src.clutad0.model import ClusterDDPM
 from sklearn.metrics import adjusted_rand_score
 from torch.utils.data import DataLoader, TensorDataset
 from src.utils import cluster_accuracy
