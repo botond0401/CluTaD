@@ -47,5 +47,5 @@ class Denoiser(nn.Module):
             out_cat.append(probs)
             idx += K
 
-        out_cat = torch.cat(out_cat, dim=1)
+        out_cat = torch.cat(out_cat, dim=1) if out_cat else None
         return out_num, out_cat

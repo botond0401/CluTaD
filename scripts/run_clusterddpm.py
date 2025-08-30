@@ -4,24 +4,31 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import json
+from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.clusterddpm.encoder import TabularEncoder
 from src.clusterddpm.denoiser import Denoiser
 from src.clusterddpm.model import ClusterDDPM
-from sklearn.metrics import confusion_matrix, accuracy_score, adjusted_rand_score
-from scipy.optimize import linear_sum_assignment
+from sklearn.metrics import adjusted_rand_score
+from torch.utils.data import DataLoader, TensorDataset
+from src.utils import cluster_accuracy
+
+
+dataset_index = '23'
 
 # Config
-DATA_PATH = 'data/preprocessed/1480/data_processed.csv'
-PLOTS_PATH = 'plots/clusterddpm/1480'
-CHECKPOINT_PATH_PRE = 'models/1480/clusterddpm/pretrain_checkpoint.pth'
-CHECKPOINT_PATH_FINAL = 'models/1480/clusterddpm/final_checkpoint.pth'
+DATA_PATH = f'data/preprocessed/{dataset_index}/data_processed.csv'
+LABEL_PATH = f'data/preprocessed/{dataset_index}/clusters.csv'
+METADATA_PATH = f'data/preprocessed/{dataset_index}/metadata.json'
 
-num_numeric = 9
-categories = [2]
-n_clusters = 2
+with open(METADATA_PATH, 'r') as f:
+  metadata = json.load(f)
+num_numeric = metadata['num_numerical_features']
+categories = metadata['num_classes_per_cat']
+n_clusters = metadata['num_clusters']
 
 T = 200
 
@@ -33,116 +40,173 @@ hidden_dims=[500, 500, 2000]
 kl_weight=0.1
 latent_dim = 5
 lr = 1e-3
-
-
 dim_hidden = 500
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
 # Load data
 df = pd.read_csv(DATA_PATH)
 x_real = torch.tensor(df.values, dtype=torch.float32).to(device)
+dataset = TensorDataset(x_real)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+# Load ground truth
+y_true = pd.read_csv(LABEL_PATH).values.flatten()
+if y_true.dtype.kind in {'U', 'S', 'O'}:
+    unique_labels, y_true = np.unique(np.asarray(y_true).astype(str), return_inverse=True)
 N, D = x_real.shape
 
-# Models
-encoder = TabularEncoder(
-    input_dim=D,
-    hidden_dims=hidden_dims,
-    latent_dim=latent_dim
-).to(device)
+BEST_PATH = f"best_checkpoint_{dataset_index}.pth"
+best_acc = -1.0
+best_meta = None
+for dim_hidden in [500, 1000]:
+  for latent_dim in [5, 10, 15, 20]:
+    print(f"dim_hidden {dim_hidden}, latent_dim: {latent_dim}")
 
-denoiser = Denoiser(
-    dim_in=D,
-    latent_dim=latent_dim,
-    dim_hidden=dim_hidden,
-    num_numeric=num_numeric,
-    categories=categories
-).to(device)
+    # Models
+    encoder = TabularEncoder(
+        input_dim=D,
+        hidden_dims=hidden_dims,
+        latent_dim=latent_dim
+    ).to(device)
 
-# ClusterDDPM wrapper
-model = ClusterDDPM(
-    encoder=encoder,
-    denoiser=denoiser,
-    T=T,
-    num_numeric=num_numeric,
-    categories=categories,
-    n_clusters=2,
-    device=device
-)
+    denoiser = Denoiser(
+        dim_in=D,
+        latent_dim=latent_dim,
+        dim_hidden=dim_hidden,
+        num_numeric=num_numeric,
+        categories=categories
+    ).to(device)
 
-# Optimizer
-optimizer = optim.Adam(
-    list(encoder.parameters()) + list(denoiser.parameters()),
-    lr=lr
-)
+    # ClusterDDPM wrapper
+    model = ClusterDDPM(
+        encoder=encoder,
+        denoiser=denoiser,
+        T=T,
+        num_numeric=num_numeric,
+        categories=categories,
+        n_clusters=n_clusters,
+        device=device
+    )
 
-# 🔹 Pretraining
-print("🔹 Starting pretraining...")
-model.pretrain(x_real, optimizer, steps=pretrain_steps, batch_size=batch_size, plot_freq=100)
+    # Optimizer
+    optimizer = optim.Adam(
+        list(encoder.parameters()) + list(denoiser.parameters()),
+        lr=lr, weight_decay=1e-4
+    )
 
-# Save pretraining checkpoint
-os.makedirs(os.path.dirname(CHECKPOINT_PATH_PRE), exist_ok=True)
-torch.save({
-    'encoder': encoder.state_dict(),
-    'denoiser': denoiser.state_dict(),
-    'optimizer': optimizer.state_dict(),
-    'T': T,
-    'num_numeric': num_numeric,
-    'categories': categories
-}, CHECKPOINT_PATH_PRE)
-print(f"✅ Pretraining checkpoint saved at {CHECKPOINT_PATH_PRE}")
+    # 🔹 Pretraining
+    print("🔹 Starting pretraining...")
+    model.pretrain(dataloader, optimizer, epochs=pretrain_steps, batch_size=batch_size, plot_freq=100)
 
-# 🔹 Fit initial GMM (E-step 0)
-print("🔹 Fitting initial GMM...")
-model.fit_gmm(x_real)
+    # 🔹 Fit initial GMM (E-step 0)
+    print("🔹 Fitting initial GMM...")
+    model.fit_gmm(dataloader)
 
-# 🔹 EM training loop
-print("🔹 Starting EM training...")
-for epoch in range(em_epochs):
-    print(f"🌟 EM epoch {epoch+1}/{em_epochs}")
-    
-    # M-step
-    model.train_elbo(x_real, optimizer, steps=m_steps, batch_size=batch_size, kl_weight=kl_weight, plot_freq=50)
-    
-    # E-step
-    model.fit_gmm(x_real)
+    # 🔹 EM training loop
+    print("🔹 Starting EM training...")
+    for epoch in range(em_epochs):
+        # M-step
+        # Optimizer
+        optimizer = optim.Adam(
+            list(encoder.parameters()) + list(denoiser.parameters()),
+            lr=lr, weight_decay=1e-4
+        )
+        avg_loss, avg_recon_loss, avg_kl_loss = model.train_elbo(dataloader, optimizer, batch_size=batch_size, kl_weight=kl_weight, plot_freq=50)
+        if (epoch+1) % 100 == 0:
+          print(f'Epoch {epoch+1}/{em_epochs}, Loss: {avg_loss:.4f}, Recon-Loss: {avg_recon_loss:.4f}, KL-Loss: {avg_kl_loss:.4f}')
 
-# Save final model
-os.makedirs(os.path.dirname(CHECKPOINT_PATH_FINAL), exist_ok=True)
-torch.save({
-    'encoder': encoder.state_dict(),
-    'denoiser': denoiser.state_dict(),
-    'optimizer': optimizer.state_dict(),
-    'gmm': model.gmm
-}, CHECKPOINT_PATH_FINAL)
-print(f"✅ Final checkpoint saved at {CHECKPOINT_PATH_FINAL}")
+        if epoch % 10 == 0:
+          # E-step
+          model.fit_gmm(dataloader)
+
+    # Encode all data and compute GMM assignments
+    with torch.no_grad():
+        mu, logvar = model.encoder(x_real)
+        z_np = mu.cpu().numpy()
+        y_pred = model.gmm.predict(z_np)
+
+    # Compute metrics
+    accuracy, y_aligned = cluster_accuracy(y_true, y_pred)
+    ari = adjusted_rand_score(y_true, y_pred)
+
+    # Print results
+    print(f"✅ Final clustering performance:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"ARI: {ari:.4f}")
 
 
+    # Example: after you finish one training run
+    results = {
+        "accuracy": float(accuracy),      # your computed accuracy
+        "ari": float(ari),                # your computed ARI
+        "T": int(T),                      # diffusion timesteps
+        "dim_hidden": int(dim_hidden),    # hidden dimension
+        "latent_dim": int(latent_dim),    # latent dimension
+        "dataset_index": str(dataset_index)      # e.g., "mnist", "cifar10", etc.
+    }
 
+    # Path to results file
+    results_file = Path("clusterddpm_results.json")
 
-# Encode all data and compute GMM assignments
-with torch.no_grad():
-    mu, logvar = model.encoder(x_real)
-    z_np = mu.cpu().numpy()
-    y_pred = model.gmm.predict(z_np)
+    # If file exists, load and append; else create new
+    if results_file.exists():
+        with open(results_file, "r") as f:
+            all_results = json.load(f)
+    else:
+        all_results = []
 
-# Load ground truth
-y_true = pd.read_csv(DATA_PATH.replace("data_processed.csv", "clusters.csv")).values.flatten()
+    all_results.append(results)
 
-# Define cluster alignment function
-def cluster_accuracy(y_true, y_pred):
-    contingency = confusion_matrix(y_true, y_pred)
-    row_ind, col_ind = linear_sum_assignment(-contingency)
-    mapping = dict(zip(col_ind, row_ind))
-    y_aligned = np.array([mapping[label] for label in y_pred])
-    acc = accuracy_score(y_true, y_aligned)
-    return acc, y_aligned
+    # Save updated results
+    with open(results_file, "w") as f:
+        json.dump(all_results, f, indent=4)
 
-# Compute metrics
-accuracy, y_aligned = cluster_accuracy(y_true, y_pred)
-ari = adjusted_rand_score(y_true, y_pred)
+    print(f"Saved results to {results_file}\n")
 
-# Print results
-print(f"✅ Final clustering performance:")
-print(f"Accuracy: {accuracy:.4f}")
-print(f"ARI: {ari:.4f}")
+    # --- NEW: update 'best' and save checkpoint if improved ---
+    if accuracy > best_acc:
+        best_acc = float(accuracy)
+        best_meta = {
+            "T": int(T),
+            "latent_dim": int(latent_dim),
+            "dim_hidden": int(dim_hidden),
+            "dataset_index": str(dataset_index),
+            "accuracy": float(accuracy),
+            "ari": float(ari)
+        }
+
+        # save immediately so you don't lose it if the script stops
+        torch.save({
+            "encoder": encoder.state_dict(),
+            "denoiser": denoiser.state_dict(),
+            "optimizer": optimizer.state_dict(),  # optional but handy
+            "gmm": model.gmm,                     # sklearn object; torch.save pickles it
+            "config": {
+                "T": T,
+                "num_numeric": num_numeric,
+                "categories": categories,
+                "n_clusters": n_clusters,
+                "hidden_dims": hidden_dims,
+                "dim_hidden": dim_hidden,
+                "latent_dim": latent_dim,
+                "kl_weight": kl_weight,
+                "lr": lr,
+                "batch_size": batch_size,
+                "em_epochs": em_epochs,
+                "pretrain_steps": pretrain_steps,
+            },
+            "metrics": {
+                "accuracy": float(accuracy),
+                "ari": float(ari)
+            }
+        }, BEST_PATH)
+
+        print(f"💾 New best model saved to {BEST_PATH} (acc={accuracy:.4f}, T={T}, z={latent_dim})")
+    # ----------------------------------------------------------
+
+# --- after both loops finish ---
+print("🏁 Tuning finished.")
+print(f"Best acc: {best_acc:.4f}")
+if best_meta is not None:
+    print(f"Best config: dim_hidden={best_meta['dim_hidden']}, latent_dim={best_meta['latent_dim']}")
