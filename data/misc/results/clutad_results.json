@@ -1,5 +1,277 @@
 [
     {
+        "accuracy": 0.37037037037037035,
+        "ari": 0.030097103056116854,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 5,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.29224537037037035,
+        "ari": 0.0027274073225091525,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 5,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.7002314814814815,
+        "ari": 0.0,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 10,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.3738425925925926,
+        "ari": 0.04159952682627855,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 5,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.7002314814814815,
+        "ari": 0.0,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 10,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.5555555555555556,
+        "ari": -0.014178185509135566,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 15,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.7002314814814815,
+        "ari": 0.0,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 20,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.41087962962962965,
+        "ari": -0.05188516598388982,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 5,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.7002314814814815,
+        "ari": 0.0,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 10,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.7002314814814815,
+        "ari": 0.0,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 15,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.7002314814814815,
+        "ari": 0.0,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 20,
+        "dataset_index": "40975"
+    },
+    {
+        "accuracy": 0.5008787346221442,
+        "ari": -0.0018861820440133753,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 5,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6133567662565905,
+        "ari": 0.04975277392467254,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 10,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6959578207381371,
+        "ari": 0.149343633996839,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 15,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6678383128295254,
+        "ari": 0.109365423787865,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 20,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.655536028119508,
+        "ari": 0.06764971207597523,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 5,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6133567662565905,
+        "ari": 0.047619113412877424,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 10,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6028119507908611,
+        "ari": 0.03893124464108941,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 15,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5096660808435852,
+        "ari": -0.007040807813440802,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 20,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5992970123022847,
+        "ari": 0.03544390542779964,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 5,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5940246045694201,
+        "ari": 0.031600802455514596,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 10,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5553602811950791,
+        "ari": 0.009419726159484934,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 15,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6063268892794376,
+        "ari": 0.04253563342961521,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 20,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5131810193321616,
+        "ari": -0.001886889546190887,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 5,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.562390158172232,
+        "ari": 0.013806074502293745,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 10,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5782073813708261,
+        "ari": 0.021472572068615255,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 15,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5571177504393673,
+        "ari": 0.010957315109326127,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 5,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.7521968365553603,
+        "ari": 0.2531506385112894,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 10,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.7170474516695958,
+        "ari": 0.18566102120150194,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 15,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.9472759226713533,
+        "ari": 0.798233198252776,
+        "T": 100,
+        "dim_hidden": 500,
+        "latent_dim": 20,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.5307557117750439,
+        "ari": 0.0016715756162110414,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 5,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.7082601054481547,
+        "ari": 0.16724575977635764,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 10,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6151142355008787,
+        "ari": 0.04341732411222299,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 15,
+        "dataset_index": "1510"
+    },
+    {
+        "accuracy": 0.6344463971880492,
+        "ari": 0.06754375830967739,
+        "T": 100,
+        "dim_hidden": 1000,
+        "latent_dim": 20,
+        "dataset_index": "1510"
+    },
+        {
         "accuracy": 0.8976327575175944,
         "ari": 0.0,
         "T": 100,
