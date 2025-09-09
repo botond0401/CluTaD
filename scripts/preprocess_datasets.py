@@ -35,7 +35,7 @@ def main():
         # If dataset has exactly two clusters, create balanced version BEFORE preprocessing
         df_balanced = balance_two_cluster_dataset(df, cluster_col)
         if df_balanced is not None:
-            balanced_save_dir = os.path.join(balanced_output_dir, dataset_id)
+            balanced_save_dir = os.path.join(balanced_output_dir, f"{dataset_id}b")
             print(f"⚖️  Creating balanced version of dataset {dataset_id}...")
             preprocess_and_save(df_balanced, cluster_col, categorical_cols, balanced_save_dir)
 
