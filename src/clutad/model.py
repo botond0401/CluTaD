@@ -4,6 +4,7 @@ from sklearn.mixture import GaussianMixture
 import torch.nn.utils as nn_utils
 import torch.nn as nn
 import itertools
+import torch.nn.functional as F
 
 
 class CluTaD:
