@@ -66,7 +66,8 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
     df_out.to_csv(os.path.join(save_dir, "data_processed.csv"), index=False)
 
     # Save metadata
-    num_features = df_out.shape[1]
+    num_features = len(numerical_cols) + len(categorical_cols)
+    num_og_features = df_out.shape[1]
     num_samples = df_out.shape[0]
     f_s_ratio = round((num_features / num_samples) * 100, 3)
 
@@ -76,7 +77,8 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
         "cluster_col": cluster_col,
         "num_numerical_features": len(numerical_cols),
         "num_categorical_features": len(categorical_cols),
-        "num_columns": num_features,
+        "num_og_columns": num_features,
+        "num_columns": num_og_features,
         "num_clusters": clusters[cluster_col].nunique(),
         "num_samples": num_samples,
         "f_s_ratio": f_s_ratio,

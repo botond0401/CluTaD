@@ -26,6 +26,7 @@
     "cluster_col": "defects",
     "num_numerical_features": 21,
     "num_categorical_features": 0,
+    "num_og_columns": 21,
     "num_columns": 21,
     "num_clusters": 2,
     "num_samples": 1109,

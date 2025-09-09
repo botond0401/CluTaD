@@ -76,10 +76,11 @@
     "cluster_col": "Author",
     "num_numerical_features": 69,
     "num_categorical_features": 1,
+    "num_og_columns": 70,
     "num_columns": 81,
     "num_clusters": 4,
     "num_samples": 841,
-    "f_s_ratio": 9.631,
+    "f_s_ratio": 8.323,
     "num_classes_per_cat": [
         12
     ]

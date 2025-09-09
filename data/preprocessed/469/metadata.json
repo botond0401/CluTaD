@@ -9,10 +9,11 @@
     "cluster_col": "Prevention",
     "num_numerical_features": 0,
     "num_categorical_features": 4,
+    "num_og_columns": 4,
     "num_columns": 21,
     "num_clusters": 6,
     "num_samples": 797,
-    "f_s_ratio": 2.635,
+    "f_s_ratio": 0.502,
     "num_classes_per_cat": [
         9,
         7,

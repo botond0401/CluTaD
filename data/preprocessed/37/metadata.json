@@ -13,6 +13,7 @@
     "cluster_col": "class",
     "num_numerical_features": 8,
     "num_categorical_features": 0,
+    "num_og_columns": 8,
     "num_columns": 8,
     "num_clusters": 2,
     "num_samples": 768,

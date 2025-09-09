@@ -32,6 +32,7 @@
     "cluster_col": "target",
     "num_numerical_features": 27,
     "num_categorical_features": 0,
+    "num_og_columns": 27,
     "num_columns": 27,
     "num_clusters": 7,
     "num_samples": 1941,
