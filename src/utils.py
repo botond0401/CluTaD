@@ -7,6 +7,7 @@ from typing import Union, List, Dict, Tuple, Optional
 from sklearn.metrics import confusion_matrix, accuracy_score
 from scipy.optimize import linear_sum_assignment
 import numpy as np
+from sklearn.utils import resample
 
 
 def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles_max=1000):
@@ -89,6 +90,31 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
         json.dump(metadata, f, indent=4)
 
     print(f"✅ Data and metadata saved to '{save_dir}'")
+
+
+def balance_two_cluster_dataset(df, cluster_col):
+    """Return a balanced version of a two-cluster dataset by undersampling."""
+    cluster_counts = df[cluster_col].value_counts()
+    if len(cluster_counts) != 2:
+        return None  # only balance datasets with exactly 2 clusters
+
+    minority_class = cluster_counts.idxmin()
+    majority_class = cluster_counts.idxmax()
+    n_minority = cluster_counts.min()
+
+    df_minority = df[df[cluster_col] == minority_class]
+    df_majority = df[df[cluster_col] == majority_class]
+
+    df_majority_downsampled = resample(
+        df_majority,
+        replace=False,
+        n_samples=n_minority,
+        random_state=42,
+    )
+
+    df_balanced = pd.concat([df_minority, df_majority_downsampled], axis=0)
+    df_balanced = df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+    return df_balanced
 
 
 def calculate_ranks(
