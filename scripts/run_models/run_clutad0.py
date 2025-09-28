@@ -146,7 +146,7 @@ for dim_hidden in [500, 1000]:
     }
 
     # Path to results file
-    results_file = Path("clusterddpm_results.json")
+    results_file = Path("clutad0/clusterddpm_results.json")
 
     # If file exists, load and append; else create new
     if results_file.exists():

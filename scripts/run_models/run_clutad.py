@@ -160,7 +160,7 @@ for dim_hidden in [500, 1000]:
     }
 
     # Path to results file
-    results_file = Path("clutad_results.json")
+    results_file = Path("clutad/clutad_results.json")
 
     # If file exists, load and append; else create new
     if results_file.exists():

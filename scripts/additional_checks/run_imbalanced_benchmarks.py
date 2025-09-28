@@ -62,12 +62,12 @@ def main():
         ari_results.loc[len(ari_results)] = [dataset_id, ari_kmeans, ari_gmm]
 
     # save result tables
-    acc_results.to_csv(os.path.join(output_dir, "balanced_clustering_accuracies.csv"), index=False)
-    ari_results.to_csv(os.path.join(output_dir, "balanced_clustering_ari.csv"), index=False)
+    acc_results.to_csv(os.path.join(output_dir, "clutad/balanced/balanced_clustering_accuracies.csv"), index=False)
+    ari_results.to_csv(os.path.join(output_dir, "clutad/balanced/balanced_clustering_ari.csv"), index=False)
 
     print("✅ Finished. Results saved to:")
-    print(f"   - {os.path.join(output_dir, 'balanced_clustering_accuracies.csv')}")
-    print(f"   - {os.path.join(output_dir, 'balanced_clustering_ari.csv')}")
+    print(f"   - {os.path.join(output_dir, 'clutad/balanced/balanced_clustering_accuracies.csv')}")
+    print(f"   - {os.path.join(output_dir, 'clutad/balanced/balanced_clustering_ari.csv')}")
 
 if __name__ == "__main__":
     main()
