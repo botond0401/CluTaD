@@ -105,7 +105,21 @@ class DiffusionTrainer:
                 plt.hist(orig_vals, bins=bins, alpha=0.5, label='Original')
                 plt.hist(den_vals, bins=bins, alpha=0.5, label='Denoised')
                 plt.legend()
-                plt.title(f'Step {step} - Numerical var {i}')
+                panel_labels = {
+                    (1, 1): "d)",
+                    (500, 1): "e)",
+                    (1000, 1): "f)",
+                    (1, 2): "g)",
+                    (500, 2): "h)",
+                    (1000, 2): "i)",
+                    (1, 0): "a)",   # categorical if you also plot it
+                    (500, 0): "b)",
+                    (1000, 0): "c)"
+                }
+
+                # when plotting:
+                label = panel_labels.get((step, i), "")
+                plt.xlabel(f"{label} Step {step} - Numerical var {i}")
                 save_dir_num = os.path.join(self.plot_dir, f'num{i}')
                 os.makedirs(save_dir_num, exist_ok=True)
                 plt.savefig(os.path.join(save_dir_num, f'histogram_step{step}.png'))
@@ -120,7 +134,17 @@ class DiffusionTrainer:
                 plt.hist(orig_cat, bins=K, alpha=0.5, label='Original')
                 plt.hist(pred_cat_argmax, bins=K, alpha=0.5, label='Denoised')
                 plt.legend()
-                plt.title(f'Step {step} - Categorical var {j}')
+                # map (step, var) -> panel letter
+                panel_labels = {
+                    (1, 0): "a)",
+                    (500, 0): "b)",
+                    (1000, 0): "c)",
+                }
+
+                # when plotting:
+                label = panel_labels.get((step, j), "")
+                plt.xlabel(f"{label} Step {step} - Categorical var")
+                #plt.title(f'Step {step} - Categorical var {j}')
                 save_dir_cat = os.path.join(self.plot_dir, f'cat{j}')
                 os.makedirs(save_dir_cat, exist_ok=True)
                 plt.savefig(os.path.join(save_dir_cat, f'histogram_step{step}.png'))
