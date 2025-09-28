@@ -13,7 +13,7 @@ def main():
     config_path = "data/misc/dataset_config.json"
     raw_dir = "data/raw"
     output_dir = "data/preprocessed"
-    balanced_output_dir = "data/preprocessed_balanced"
+    balanced_output_dir = "data/preprocessed"
 
     with open(config_path, "r") as f:
         configs = json.load(f)

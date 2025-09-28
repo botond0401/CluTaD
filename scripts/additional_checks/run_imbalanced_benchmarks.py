@@ -26,7 +26,7 @@ def run_best_of_n(model_class, X, y_true, n_runs=10, **kwargs):
 
 def main():
     config_path = "data/misc/dataset_config.json"
-    input_dir = "data/preprocessed_balanced"
+    input_dir = "data/preprocessed"
     output_dir = "data/results"
 
     with open(config_path, "r") as f:

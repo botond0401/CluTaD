@@ -34,7 +34,7 @@ def apply_pca(df, n_components=4, exclude_cols=None):
 def main():
     config_path = "data/misc/dataset_config.json"
     raw_dir = "data/raw"
-    pca_output_dir = "data/preprocessed_pca"
+    pca_output_dir = "data/preprocessed"
 
     with open(config_path, "r") as f:
         configs = json.load(f)
