@@ -4,12 +4,12 @@ import pandas as pd
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.tabddpm.diffusion_model import Denoiser
 from src.tabddpm.trainer import DiffusionTrainer
 
-# Config
+
 DATA_PATH = 'data/preprocessed/1480/data_processed.csv'
 PLOTS_PATH = 'plots/tabddpm/1480'
 num_numeric = 9
@@ -20,16 +20,13 @@ batch_size = 32
 dim_hidden = 64
 lr = 1e-3
 
-# Load data
 df = pd.read_csv(DATA_PATH)
 x_real = torch.tensor(df.values, dtype=torch.float32)
 N, D = x_real.shape
 
-# Model + optimizer
 model = Denoiser(D, dim_hidden, num_numeric, categories)
 optimizer = optim.Adam(model.parameters(), lr=lr)
 
-# Trainer
 trainer = DiffusionTrainer(
     model=model,
     optimizer=optimizer,

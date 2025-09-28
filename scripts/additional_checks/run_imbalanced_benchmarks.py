@@ -7,8 +7,9 @@ from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import adjusted_rand_score
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.utils import cluster_accuracy  # your function for label alignment
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+from src.utils import cluster_accuracy
 
 
 def run_best_of_n(model_class, X, y_true, n_runs=10, **kwargs):
@@ -17,7 +18,7 @@ def run_best_of_n(model_class, X, y_true, n_runs=10, **kwargs):
         model = model_class(n_clusters=2, random_state=seed, n_init=10, **kwargs) \
             if model_class == KMeans else model_class(n_components=2, random_state=seed, n_init=10, **kwargs)
         y_pred = model.fit_predict(X)
-        acc, y_aligned = cluster_accuracy(y_true, y_pred)
+        acc, _ = cluster_accuracy(y_true, y_pred)
         ari = adjusted_rand_score(y_true, y_pred)
         if acc > best_acc:
             best_acc, best_ari = acc, ari
@@ -47,16 +48,13 @@ def main():
             print(f"⚠️ Skipping {dataset_id}, missing files.")
             continue
 
-        # load data
         X = pd.read_csv(data_file)
         y_true = pd.read_csv(labels_file).values.flatten()
         if y_true.dtype.kind in {'U', 'S', 'O'}:
             _, y_true = np.unique(np.asarray(y_true).astype(str), return_inverse=True)
 
-        # --- KMeans (best of 10 seeds) ---
         acc_kmeans, ari_kmeans = run_best_of_n(KMeans, X, y_true, n_runs=10)
 
-        # --- GMM (best of 10 seeds) ---
         acc_gmm, ari_gmm = run_best_of_n(GaussianMixture, X, y_true, n_runs=10)
 
         # save results

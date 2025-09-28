@@ -6,7 +6,7 @@ import sys
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.utils import preprocess_and_save
 
@@ -16,18 +16,14 @@ def apply_pca(df, n_components=4, exclude_cols=None):
     if exclude_cols is None:
         exclude_cols = []
 
-    # Separate features and excluded columns
     features = df.drop(columns=exclude_cols)
     to_keep = df[exclude_cols]
 
-    # Standardize
     X_scaled = StandardScaler().fit_transform(features)
 
-    # Apply PCA
     pca = PCA(n_components=n_components, random_state=42)
     X_pca = pca.fit_transform(X_scaled)
 
-    # Build new DataFrame
     df_pca = pd.DataFrame(X_pca, columns=[f"PCA{i+1}" for i in range(n_components)])
     df_out = pd.concat([df_pca, to_keep.reset_index(drop=True)], axis=1)
 
@@ -43,7 +39,6 @@ def main():
     with open(config_path, "r") as f:
         configs = json.load(f)
 
-    # Only process dataset 458
     dataset_id = "458"
     cfg = configs[dataset_id]
 
@@ -55,7 +50,6 @@ def main():
     df = pd.DataFrame(data)
     df = df.map(lambda x: x.decode("utf-8") if isinstance(x, bytes) else x)
 
-    # Apply PCA and save
     pca_save_dir = os.path.join(pca_output_dir, f"{dataset_id}_pca")
     print(f"📉 Applying PCA (4 components) to dataset {dataset_id}...")
     df_pca = apply_pca(df, n_components=4, exclude_cols=[cluster_col])

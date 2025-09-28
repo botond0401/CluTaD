@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.io import arff
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from src.utils import preprocess_and_save, balance_two_cluster_dataset
 
@@ -28,11 +28,9 @@ def main():
         df = pd.DataFrame(data)
         df = df.map(lambda x: x.decode("utf-8") if isinstance(x, bytes) else x)
 
-        # Preprocess original (unbalanced) version
         save_dir = os.path.join(output_dir, dataset_id)
         preprocess_and_save(df, cluster_col, categorical_cols, save_dir)
 
-        # If dataset has exactly two clusters, create balanced version BEFORE preprocessing
         df_balanced = balance_two_cluster_dataset(df, cluster_col)
         if df_balanced is not None:
             balanced_save_dir = os.path.join(balanced_output_dir, f"{dataset_id}b")

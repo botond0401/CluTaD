@@ -7,23 +7,21 @@ import sys
 import json
 from pathlib import Path
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from src.clutad.encoder import TabularEncoder
-from src.clutad.denoiser import Denoiser
-from src.clutad.model import CluTaD
+from src.clutad0.encoder import TabularEncoder
+from src.clutad0.denoiser import Denoiser
+from src.clutad0.model import ClusterDDPM
 from sklearn.metrics import adjusted_rand_score
 from torch.utils.data import DataLoader, TensorDataset
 from src.utils import cluster_accuracy
 
-dataset_index = '40975'
 
+dataset_index = '23'
 
-# Config
 DATA_PATH = f'data/preprocessed/{dataset_index}/data_processed.csv'
 LABEL_PATH = f'data/preprocessed/{dataset_index}/clusters.csv'
 METADATA_PATH = f'data/preprocessed/{dataset_index}/metadata.json'
-
 
 with open(METADATA_PATH, 'r') as f:
   metadata = json.load(f)
@@ -31,18 +29,20 @@ num_numeric = metadata['num_numerical_features']
 categories = metadata['num_classes_per_cat']
 n_clusters = metadata['num_clusters']
 
-T = 100 # this is a question !!!
+T = 200
 
-pretrain_steps = 1000 # same as in example
-em_epochs = 1000 # same as in example (it is 1000 altogether)
-batch_size = 256 # same as in example
-hidden_dims=[500, 500, 2000] # same as in example
-kl_weight=0.1 # same as in example
-lr = 1e-3 # same as in example
-
-
+pretrain_steps = 1000
+em_epochs = 100
+m_steps = 10
+batch_size = 256
+hidden_dims=[500, 500, 2000]
+kl_weight=0.1
+latent_dim = 5
+lr = 1e-3
+dim_hidden = 500
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 # Load data
 df = pd.read_csv(DATA_PATH)
@@ -77,8 +77,8 @@ for dim_hidden in [500, 1000]:
         categories=categories
     ).to(device)
 
-    # CluTaD wrapper
-    model = CluTaD(
+    # ClusterDDPM wrapper
+    model = ClusterDDPM(
         encoder=encoder,
         denoiser=denoiser,
         T=T,
@@ -90,9 +90,7 @@ for dim_hidden in [500, 1000]:
 
     # Optimizer
     optimizer = optim.Adam(
-        list(encoder.parameters()) +
-        list(denoiser.parameters()) +
-        list(model.mlp.parameters()),
+        list(encoder.parameters()) + list(denoiser.parameters()),
         lr=lr, weight_decay=1e-4
     )
 
@@ -104,33 +102,22 @@ for dim_hidden in [500, 1000]:
     print("🔹 Fitting initial GMM...")
     model.fit_gmm(dataloader)
 
-    # Optimizer
-    optimizer = optim.Adam(
-        list(encoder.parameters()) +
-        list(denoiser.parameters()) +
-        list(model.mlp.parameters()),
-        lr=lr, weight_decay=1e-4
-    )
-
     # 🔹 EM training loop
     print("🔹 Starting EM training...")
     for epoch in range(em_epochs):
-        avg_loss, avg_recon_loss, avg_cluster_loss, stop = model.train_elbo(
-            dataloader, optimizer, batch_size=batch_size, kl_weight=kl_weight, plot_freq=50
+        # M-step
+        # Optimizer
+        optimizer = optim.Adam(
+            list(encoder.parameters()) + list(denoiser.parameters()),
+            lr=lr, weight_decay=1e-4
         )
+        avg_loss, avg_recon_loss, avg_kl_loss = model.train_elbo(dataloader, optimizer, batch_size=batch_size, kl_weight=kl_weight, plot_freq=50)
         if (epoch+1) % 100 == 0:
-            print(f"Epoch {epoch+1}/{em_epochs}, "
-                  f"Loss: {avg_loss:.4f}, Recon-Loss: {avg_recon_loss:.4f}, "
-                  f"Cluster-Loss: {avg_cluster_loss:.4f}")
-
-        #if stop:
-            #print(f"⏹️ Stopping early at epoch {epoch+1}")
-            #break
+          print(f'Epoch {epoch+1}/{em_epochs}, Loss: {avg_loss:.4f}, Recon-Loss: {avg_recon_loss:.4f}, KL-Loss: {avg_kl_loss:.4f}')
 
         if epoch % 10 == 0:
           # E-step
-            model.fit_gmm(dataloader)
-
+          model.fit_gmm(dataloader)
 
     # Encode all data and compute GMM assignments
     with torch.no_grad():
@@ -159,7 +146,7 @@ for dim_hidden in [500, 1000]:
     }
 
     # Path to results file
-    results_file = Path("clutad_results.json")
+    results_file = Path("clusterddpm_results.json")
 
     # If file exists, load and append; else create new
     if results_file.exists():
