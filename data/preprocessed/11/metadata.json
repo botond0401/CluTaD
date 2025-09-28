@@ -9,6 +9,7 @@
     "cluster_col": "class",
     "num_numerical_features": 4,
     "num_categorical_features": 0,
+    "num_og_columns": 4,
     "num_columns": 4,
     "num_clusters": 3,
     "num_samples": 625,

@@ -1,0 +1,162 @@
+[
+    {
+        "openml_id": "11",
+        "name": "Balance-scale",
+        "num_samples": 625,
+        "num_features": 4,
+        "num_numerical_features": 4,
+        "num_categorical_features": 0,
+        "num_clusters": 3,
+        "f_s_ratio": 0.64
+    },
+    {
+        "openml_id": "23",
+        "name": "Cmc",
+        "num_samples": 1473,
+        "num_features": 9,
+        "num_numerical_features": 2,
+        "num_categorical_features": 7,
+        "num_clusters": 3,
+        "f_s_ratio": 0.611
+    },
+    {
+        "openml_id": "37",
+        "name": "Diabetes",
+        "num_samples": 768,
+        "num_features": 8,
+        "num_numerical_features": 8,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 1.042
+    },
+    {
+        "openml_id": "458",
+        "name": "Analcatdata_authorship",
+        "num_samples": 841,
+        "num_features": 70,
+        "num_numerical_features": 69,
+        "num_categorical_features": 1,
+        "num_clusters": 4,
+        "f_s_ratio": 8.323
+    },
+    {
+        "openml_id": "469",
+        "name": "Analcatdata_dmft",
+        "num_samples": 797,
+        "num_features": 4,
+        "num_numerical_features": 0,
+        "num_categorical_features": 4,
+        "num_clusters": 6,
+        "f_s_ratio": 0.502
+    },
+    {
+        "openml_id": "1049",
+        "name": "Pc4",
+        "num_samples": 1458,
+        "num_features": 37,
+        "num_numerical_features": 37,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 2.538
+    },
+    {
+        "openml_id": "1050",
+        "name": "Pc3",
+        "num_samples": 1563,
+        "num_features": 37,
+        "num_numerical_features": 37,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 2.367
+    },
+    {
+        "openml_id": "1063",
+        "name": "Kc2",
+        "num_samples": 522,
+        "num_features": 21,
+        "num_numerical_features": 21,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 4.023
+    },
+    {
+        "openml_id": "1067",
+        "name": "Kc1",
+        "num_samples": 2109,
+        "num_features": 21,
+        "num_numerical_features": 21,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 0.996
+    },
+    {
+        "openml_id": "1068",
+        "name": "Pc1",
+        "num_samples": 1109,
+        "num_features": 21,
+        "num_numerical_features": 21,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 1.894
+    },
+    {
+        "openml_id": "1464",
+        "name": "Blood-transfusion",
+        "num_samples": 748,
+        "num_features": 4,
+        "num_numerical_features": 4,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 0.535
+    },
+    {
+        "openml_id": "1480",
+        "name": "Ilpd",
+        "num_samples": 583,
+        "num_features": 10,
+        "num_numerical_features": 9,
+        "num_categorical_features": 1,
+        "num_clusters": 2,
+        "f_s_ratio": 1.715
+    },
+    {
+        "openml_id": "1510",
+        "name": "Wdbc",
+        "num_samples": 569,
+        "num_features": 30,
+        "num_numerical_features": 30,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 5.272
+    },
+    {
+        "openml_id": "40975",
+        "name": "Car",
+        "num_samples": 1728,
+        "num_features": 6,
+        "num_numerical_features": 0,
+        "num_categorical_features": 6,
+        "num_clusters": 4,
+        "f_s_ratio": 0.347
+    },
+    {
+        "openml_id": "40982",
+        "name": "Steel-plates-fault",
+        "num_samples": 1941,
+        "num_features": 27,
+        "num_numerical_features": 27,
+        "num_categorical_features": 0,
+        "num_clusters": 7,
+        "f_s_ratio": 1.391
+    },
+    {
+        "openml_id": "40994",
+        "name": "Climate-model",
+        "num_samples": 540,
+        "num_features": 20,
+        "num_numerical_features": 20,
+        "num_categorical_features": 0,
+        "num_clusters": 2,
+        "f_s_ratio": 3.704
+    }
+]

@@ -11,10 +11,11 @@
     "cluster_col": "class",
     "num_numerical_features": 0,
     "num_categorical_features": 6,
+    "num_og_columns": 6,
     "num_columns": 21,
     "num_clusters": 4,
     "num_samples": 1728,
-    "f_s_ratio": 1.215,
+    "f_s_ratio": 0.347,
     "num_classes_per_cat": [
         4,
         4,

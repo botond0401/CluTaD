@@ -3,9 +3,11 @@ import joblib
 import json
 import pandas as pd
 from sklearn.preprocessing import QuantileTransformer, OneHotEncoder
-from typing import List, Dict, Union
+from typing import Union, List, Dict, Tuple, Optional
 from sklearn.metrics import confusion_matrix, accuracy_score
 from scipy.optimize import linear_sum_assignment
+import numpy as np
+from sklearn.utils import resample
 
 
 def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles_max=1000):
@@ -65,7 +67,8 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
     df_out.to_csv(os.path.join(save_dir, "data_processed.csv"), index=False)
 
     # Save metadata
-    num_features = df_out.shape[1]
+    num_features = len(numerical_cols) + len(categorical_cols)
+    num_og_features = df_out.shape[1]
     num_samples = df_out.shape[0]
     f_s_ratio = round((num_features / num_samples) * 100, 3)
 
@@ -75,7 +78,8 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
         "cluster_col": cluster_col,
         "num_numerical_features": len(numerical_cols),
         "num_categorical_features": len(categorical_cols),
-        "num_columns": num_features,
+        "num_og_columns": num_features,
+        "num_columns": num_og_features,
         "num_clusters": clusters[cluster_col].nunique(),
         "num_samples": num_samples,
         "f_s_ratio": f_s_ratio,
@@ -86,6 +90,31 @@ def preprocess_and_save(df, cluster_col, categorical_cols, save_dir, n_quantiles
         json.dump(metadata, f, indent=4)
 
     print(f"✅ Data and metadata saved to '{save_dir}'")
+
+
+def balance_two_cluster_dataset(df, cluster_col):
+    """Return a balanced version of a two-cluster dataset by undersampling."""
+    cluster_counts = df[cluster_col].value_counts()
+    if len(cluster_counts) != 2:
+        return None  # only balance datasets with exactly 2 clusters
+
+    minority_class = cluster_counts.idxmin()
+    majority_class = cluster_counts.idxmax()
+    n_minority = cluster_counts.min()
+
+    df_minority = df[df[cluster_col] == minority_class]
+    df_majority = df[df[cluster_col] == majority_class]
+
+    df_majority_downsampled = resample(
+        df_majority,
+        replace=False,
+        n_samples=n_minority,
+        random_state=42,
+    )
+
+    df_balanced = pd.concat([df_minority, df_majority_downsampled], axis=0)
+    df_balanced = df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+    return df_balanced
 
 
 def calculate_ranks(
@@ -238,6 +267,141 @@ def keep_highest_accuracy(
     best_df.to_json(output_path, orient="records", indent=2)
 
     return best_df
+
+
+def calculate_ranks_multi(
+    data: Union[str, List[Dict]],
+    extras: List[Tuple[Union[str, List[Dict]], str, str]],
+    output_path: str,
+    id_col: str = "Data set ID",
+    method_cols_override: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Reads main results, appends multiple extra metrics (from multiple JSONs),
+    computes Avg. rank, Std. rank, Overall rank for method columns, and saves JSON.
+
+    Parameters
+    ----------
+    data : str | list[dict]
+        Main results JSON (path, JSON string, or list of dicts).
+    extras : list[ (extra_data, metric_name, new_col_name) ]
+        - extra_data: path | JSON string | list[dict] that must contain 'dataset_index' and metric
+        - metric_name: column name in extra_data to pull
+        - new_col_name: name to give that metric in the merged df
+    output_path : str
+        Path to save augmented JSON.
+    id_col : str
+        Column in main df used to match datasets (default "Data set ID").
+    method_cols_override : list[str] | None
+        If provided, use exactly these columns as method columns to rank (overrides detection).
+
+    Returns
+    -------
+    pd.DataFrame
+        Augmented DataFrame with summary rows appended.
+    """
+
+    # Helper to load JSON from various input types
+    def _load_json(src):
+        if isinstance(src, list):
+            return src
+        elif isinstance(src, str):
+            if src.strip().startswith("["):  # JSON string
+                return json.loads(src)
+            else:  # file path
+                with open(src, "r") as f:
+                    return json.load(f)
+        else:
+            raise ValueError("Unsupported data type for JSON input.")
+
+    # Load main data
+    records = _load_json(data)
+    df = pd.DataFrame(records)
+
+    # Normalize id column to string for safe merges
+    if id_col not in df.columns:
+        raise ValueError(f"'{id_col}' not found in main data columns.")
+    df[id_col] = df[id_col].astype(str)
+
+    # Track names of new metric columns we add (for optional exclusion from ranking)
+    added_metric_cols: List[str] = []
+
+    # Merge each extra source
+    for extra_data, metric_name, new_col_name in extras:
+        extra_records = _load_json(extra_data)
+        extra_df = pd.DataFrame(extra_records)
+
+        # required join key in extras
+        if "dataset_index" not in extra_df.columns:
+            raise ValueError("'dataset_index' not found in extra_data columns.")
+        extra_df["dataset_index"] = extra_df["dataset_index"].astype(str)
+
+        # metric must be present
+        if metric_name not in extra_df.columns:
+            raise ValueError(f"'{metric_name}' not found in extra_data columns.")
+
+        # optional: scale accuracy to %
+        col_to_merge = extra_df[["dataset_index", metric_name]].copy()
+        if metric_name == "accuracy":
+            col_to_merge[metric_name] = 100 * col_to_merge[metric_name]
+
+        # perform merge
+        df = df.merge(
+            col_to_merge,
+            left_on=id_col,
+            right_on="dataset_index",
+            how="left"
+        ).drop(columns=["dataset_index"])
+
+        # rename and fill only the newly added column (avoid blanket fillna)
+        df = df.rename(columns={metric_name: new_col_name})
+        df[new_col_name] = df[new_col_name].fillna(0)
+        added_metric_cols.append(new_col_name)
+
+    # Decide which columns to rank
+    if method_cols_override is not None:
+        method_cols = method_cols_override
+        missing = [c for c in method_cols if c not in df.columns]
+        if missing:
+            raise ValueError(f"method_cols_override columns not found: {missing}")
+    else:
+        # Start with all columns except the ID
+        method_cols = [c for c in df.columns if c != id_col]
+        # Optionally exclude the newly added extra metric columns
+
+    if not method_cols:
+        raise ValueError("No method columns selected for ranking.")
+
+    # Rank within each dataset (row-wise), higher is better
+    ranks = df[method_cols].round(1).rank(axis=1, ascending=False, method="average")
+
+    # Summary stats (per column)
+    avg_rank = ranks.mean(axis=0)
+    std_rank = ranks.std(axis=0, ddof=1)
+    overall_rank = avg_rank.rank(ascending=True, method="min")
+
+    # Build summary rows aligned to full df columns
+    def _summary_row(name, values_series):
+        row = {id_col: name}
+        row.update(values_series.to_dict())
+        # Ensure all other columns exist; fill missing with None
+        for c in df.columns:
+            if c not in row:
+                row[c] = None
+        return row
+
+    summary_rows = pd.DataFrame([
+        _summary_row("Avg. rank", avg_rank),
+        _summary_row("Std. rank", std_rank),
+        _summary_row("Overall rank", overall_rank),
+    ])[df.columns]  # keep column order
+
+    augmented_df = pd.concat([df, summary_rows], ignore_index=True)
+
+    # Save
+    augmented_df.to_json(output_path, orient="records", indent=2)
+
+    return augmented_df
 
 
 def cluster_accuracy(y_true, y_pred):

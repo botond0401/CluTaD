@@ -42,6 +42,7 @@
     "cluster_col": "c",
     "num_numerical_features": 37,
     "num_categorical_features": 0,
+    "num_og_columns": 37,
     "num_columns": 37,
     "num_clusters": 2,
     "num_samples": 1563,

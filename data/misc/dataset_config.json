@@ -8,7 +8,7 @@
   "458": {
     "file": "analcatdata_authorship.arff",
     "cluster_col": "Author",
-    "categorical_cols": []
+    "categorical_cols": ["BookID"]
   },
 
   "469": {
