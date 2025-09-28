@@ -30,7 +30,7 @@ class DiffusionTrainer:
     def train(self, steps=500, batch_size=64):
         losses = []
 
-        for step in range(steps):
+        for step in range(1, steps+1):
             idx = torch.randint(0, self.N, (batch_size,))
             x0 = self.x_real[idx]
             t = torch.randint(0, self.T, (batch_size,))
@@ -63,11 +63,11 @@ class DiffusionTrainer:
             loss.backward()
             self.optimizer.step()
 
-            if step % self.plot_freq == 0:
+            if step == 1 or step % self.plot_freq == 0:
                 print(f"Step {step}: Loss {loss.item():.4f}")
                 losses.append(loss.item())
 
-            if self.plot_variable_dists and step % self.plot_freq == 0:
+            if self.plot_variable_dists and (step == 1 or step % self.plot_freq == 0):
                 self.plot_distributions(step)
 
         if self.plot_loss_curve:
@@ -130,7 +130,8 @@ class DiffusionTrainer:
 
     def plot_loss(self, losses, steps):
         """Plots training loss curve."""
-        plt.plot(range(0, steps, 10), losses)
+        x_vals = [1] + list(range(100, steps+1, 100))
+        plt.plot(x_vals, losses)
         plt.xlabel("Training step")
         plt.ylabel("Loss")
         plt.title("Diffusion model training loss")
